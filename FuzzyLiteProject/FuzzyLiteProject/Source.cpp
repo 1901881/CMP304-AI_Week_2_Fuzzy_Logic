@@ -6,6 +6,7 @@ using namespace fl;
 int main()
 {
 	Engine* engine = new Engine();
+	Engine* engine = FisImporter().fromFile("Filename.fis");
 	///////////////////////
 	InputVariable* obstacle = new InputVariable;
 	engine->addInputVariable(obstacle);
@@ -26,15 +27,41 @@ int main()
 	mSteer->addTerm(new Ramp("left", 1.000, 0.000));
 	mSteer->addTerm(new Ramp("right", 0.000, 1.000));
 	///////////////////////
+
+
+	///////////////////////
+	InputVariable* speed = new InputVariable;
+	engine->addInputVariable(speed);
+	speed->setName("speed");
+	speed->setRange(0.000, 1.000);
+	speed->addTerm(new Ramp("movig_left", 1.000, 0.600));
+	speed->addTerm(new Ramp("moving_right", 0.300, 1.000));
+	speed->addTerm(new Triangle("none", 0.250, 0.750));
+	///////////////////////
+	OutputVariable* mSpeedSteer = new OutputVariable;
+	engine->addOutputVariable(mSpeedSteer);
+	mSpeedSteer->setName("mSteer");
+	mSpeedSteer->setRange(0.000, 1.000);
+	mSpeedSteer->setAggregation(new Maximum);
+	mSpeedSteer->setDefuzzifier(new Centroid(100));
+	mSpeedSteer->setDefaultValue(fl::nan);
+	mSpeedSteer->addTerm(new Ramp("left", 1.000, 0.600));
+	mSpeedSteer->addTerm(new Ramp("right", 0.300, 1.000));
+	mSpeedSteer->addTerm(new Triangle("none", 0.250, 0.750));
+	///////////////////////
 	RuleBlock* mamdani = new RuleBlock;
 	mamdani->setName("mamdani");
-	mamdani->setConjunction(fl::null);
-	mamdani->setDisjunction(fl::null);
+	mamdani->setConjunction(new AlgebraicProduct);
+	mamdani->setDisjunction(new Maximum);
 	mamdani->setImplication(new AlgebraicProduct);
 	mamdani->setActivation(new General);
 	mamdani->addRule(Rule::parse("if obstacle is left then mSteer is right", engine));
 	mamdani->addRule(Rule::parse("if obstacle is right then mSteer is left", engine));
+	mamdani->addRule(Rule::parse("if obstacle is left or speed is left then mSteer is right", engine));
+	mamdani->addRule(Rule::parse("if obstacle is right or speed is right then mSteer is left", engine));
 	engine->addRuleBlock(mamdani);
+	///////////////////////
+	// 
 	///////////////////////
 	while (1)
 	{
@@ -60,3 +87,8 @@ int main()
 	return 0;
 }
 //https://www.fuzzylite.com/cpp/
+
+/*
+highlight  shift alt drag - change multiple lines at once
+
+*/
